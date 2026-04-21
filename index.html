@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loan Calculator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #4facfe, #00f2fe);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .container {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        width: 320px;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    label {
+        font-size: 14px;
+        color: #555;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0 15px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    input:focus, select:focus {
+        border-color: #4facfe;
+        outline: none;
+        box-shadow: 0 0 5px rgba(79,172,254,0.5);
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        background: #4facfe;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background: #00c6ff;
+    }
+
+    .result-box {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f1f9ff;
+        border-left: 4px solid #4facfe;
+        border-radius: 6px;
+        font-size: 16px;
+        color: #333;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Loan Calculator</h2>
+
+    <label>Loan Amount</label>
+    <input type="number" id="amount" placeholder="e.g. 30000">
+
+    <label>Interest Rate (%)</label>
+    <input type="number" id="rate" placeholder="e.g. 1.5">
+
+    <label>Rate Type</label>
+    <select id="rateType">
+        <option value="yearly">Yearly</option>
+        <option value="monthly">Monthly</option>
+    </select>
+
+    <label>Time (Months)</label>
+    <input type="number" id="time" placeholder="e.g. 12">
+
+    <button onclick="calculateEMI()">Calculate EMI</button>
+
+    <div id="result" class="result-box"></div>
+</div>
+
+<script>
+function calculateEMI() {
+    let P = parseFloat(document.getElementById("amount").value);
+    let rate = parseFloat(document.getElementById("rate").value);
+    let time = parseInt(document.getElementById("time").value);
+    let rateType = document.getElementById("rateType").value;
+
+    if (!P || !rate || !time) {
+        document.getElementById("result").innerHTML = "⚠️ Please fill all fields";
+        return;
+    }
+
+    let r = (rateType === "yearly") ? (rate / 12) / 100 : rate / 100;
+
+    let EMI;
+    if (r === 0) {
+        EMI = P / time;
+    } else {
+        EMI = (P * r * Math.pow(1 + r, time)) / (Math.pow(1 + r, time) - 1);
+    }
+
+    let totalPayment = EMI * time;
+    let totalInterest = totalPayment - P;
+
+    document.getElementById("result").innerHTML = `
+        <b>Monthly EMI:</b> ₹ ${EMI.toFixed(2)} <br>
+        <b>Total Payment:</b> ₹ ${totalPayment.toFixed(2)} <br>
+        <b>Total Interest:</b> ₹ ${totalInterest.toFixed(2)}
+    `;
+}
+</script>
+
+</body>
+</html>
