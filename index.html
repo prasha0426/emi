@@ -1,107 +1,114 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Loan Calculator</title>
+
+<!-- Excel Library -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: linear-gradient(135deg, #4facfe, #00f2fe);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-    }
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
 
-    .container {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        width: 320px;
-    }
+.container {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    width: 350px;
+}
 
-    h2 {
-        text-align: center;
-        margin-bottom: 20px;
-        color: #333;
-    }
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
 
-    label {
-        font-size: 14px;
-        color: #555;
-    }
+label {
+    font-size: 14px;
+    color: #555;
+}
 
-    input, select {
-        width: 100%;
-        padding: 10px;
-        margin: 8px 0 15px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font-size: 14px;
-    }
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
 
-    input:focus, select:focus {
-        border-color: #4facfe;
-        outline: none;
-        box-shadow: 0 0 5px rgba(79,172,254,0.5);
-    }
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: #4facfe;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
 
-    button {
-        width: 100%;
-        padding: 12px;
-        background: #4facfe;
-        border: none;
-        border-radius: 8px;
-        color: white;
-        font-size: 16px;
-        cursor: pointer;
-        transition: 0.3s;
-    }
+button:hover {
+    background: #00c6ff;
+}
 
-    button:hover {
-        background: #00c6ff;
-    }
-
-    .result-box {
-        margin-top: 20px;
-        padding: 15px;
-        background: #f1f9ff;
-        border-left: 4px solid #4facfe;
-        border-radius: 6px;
-        font-size: 16px;
-        color: #333;
-    }
+.result-box {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f1f9ff;
+    border-left: 4px solid #4facfe;
+    border-radius: 6px;
+}
 </style>
+
 </head>
+
 <body>
 
 <div class="container">
     <h2>Loan Calculator</h2>
 
-    <label>Loan Amount</label>
-    <input type="number" id="amount" placeholder="e.g. 30000">
+```
+<label>Loan Amount</label>
+<input type="number" id="amount">
 
-    <label>Interest Rate (%)</label>
-    <input type="number" id="rate" placeholder="e.g. 1.5">
+<label>Interest Rate (%)</label>
+<input type="number" id="rate">
 
-    <label>Rate Type</label>
-    <select id="rateType">
-        <option value="yearly">Yearly</option>
-        <option value="monthly">Monthly</option>
-    </select>
+<label>Rate Type</label>
+<select id="rateType">
+    <option value="yearly">Yearly</option>
+    <option value="monthly">Monthly</option>
+</select>
 
-    <label>Time (Months)</label>
-    <input type="number" id="time" placeholder="e.g. 12">
+<label>Time (Months)</label>
+<input type="number" id="time">
 
-    <button onclick="calculateEMI()">Calculate EMI</button>
+<button onclick="calculateEMI()">Calculate EMI</button>
+<button onclick="downloadExcel()">Download Excel</button>
 
-    <div id="result" class="result-box"></div>
+<div id="result" class="result-box"></div>
+```
+
 </div>
 
 <script>
+function roundToTens(num) {
+    return Math.round(num / 10) * 10;
+}
+
 function calculateEMI() {
     let P = parseFloat(document.getElementById("amount").value);
     let rate = parseFloat(document.getElementById("rate").value);
@@ -109,27 +116,115 @@ function calculateEMI() {
     let rateType = document.getElementById("rateType").value;
 
     if (!P || !rate || !time) {
-        document.getElementById("result").innerHTML = "⚠️ Please fill all fields";
+        document.getElementById("result").innerHTML = "⚠️ Fill all fields";
         return;
     }
 
     let r = (rateType === "yearly") ? (rate / 12) / 100 : rate / 100;
 
-    let EMI;
-    if (r === 0) {
-        EMI = P / time;
-    } else {
-        EMI = (P * r * Math.pow(1 + r, time)) / (Math.pow(1 + r, time) - 1);
-    }
+    let EMI = (r === 0) ? P / time :
+        (P * r * Math.pow(1 + r, time)) / (Math.pow(1 + r, time) - 1);
+
+    EMI = roundToTens(EMI);
 
     let totalPayment = EMI * time;
     let totalInterest = totalPayment - P;
 
     document.getElementById("result").innerHTML = `
-        <b>Monthly EMI:</b> ₹ ${EMI.toFixed(2)} <br>
-        <b>Total Payment:</b> ₹ ${totalPayment.toFixed(2)} <br>
-        <b>Total Interest:</b> ₹ ${totalInterest.toFixed(2)}
+        <b>EMI:</b> ₹ ${EMI}<br>
+        <b>Total Payment:</b> ₹ ${roundToTens(totalPayment)}<br>
+        <b>Total Interest:</b> ₹ ${roundToTens(totalInterest)}
     `;
+}
+
+function downloadExcel() {
+    let P = parseFloat(document.getElementById("amount").value);
+    let rate = parseFloat(document.getElementById("rate").value);
+    let time = parseInt(document.getElementById("time").value);
+    let rateType = document.getElementById("rateType").value;
+
+    if (!P || !rate || !time) {
+        alert("Please fill all fields!");
+        return;
+    }
+
+    let r = (rateType === "yearly") ? (rate / 12) / 100 : rate / 100;
+
+    let principalPerMonth = roundToTens(P / time);
+    let balance = P;
+
+    let sheetData = [];
+
+    // Header
+    sheetData.push(["SHREE SELF HELP GROUP"]);
+    sheetData.push(["Loan Installment Details"]);
+    sheetData.push([]);
+
+    sheetData.push(["Account No.:"]);
+    sheetData.push(["Member's Name :"]);
+    sheetData.push(["Loan Amount (Mode):", roundToTens(P)]);
+    sheetData.push(["Date :"]);
+    sheetData.push([]);
+
+    // Table Header
+    sheetData.push([
+        "Months",
+        "Installments",
+        "Interest",
+        "Loan Outstanding",
+        "TOTAL",
+        "Date",
+        "Authority Sign."
+    ]);
+
+    // Opening balance
+    sheetData.push(["", "", "", roundToTens(P), "", "", ""]);
+
+    // Rows
+    for (let i = 1; i <= time; i++) {
+        let interest = roundToTens(balance * r);
+        let total = roundToTens(principalPerMonth + interest);
+
+        balance = roundToTens(balance - principalPerMonth);
+
+        sheetData.push([
+            i,
+            principalPerMonth,
+            interest,
+            balance < 0 ? 0 : balance,
+            total,
+            "",
+            ""
+        ]);
+    }
+
+    // Footer
+    sheetData.push([]);
+    sheetData.push([
+        "SHREE SELF HELP GROUP",
+        "",
+        "",
+        "",
+        "",
+        "Loan Applicant Signature"
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+    ws["!cols"] = [
+        { wch: 8 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 18 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 18 }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Loan Sheet");
+
+    XLSX.writeFile(wb, "Loan_Installment_Details.xlsx");
 }
 </script>
 
