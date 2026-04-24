@@ -25,13 +25,8 @@ body {
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     width: 350px;
 }
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
-}
-label {
-    font-size: 14px;
-}
+h2 { text-align: center; }
+label { font-size: 14px; }
 input, select {
     width: 100%;
     padding: 10px;
@@ -49,9 +44,7 @@ button {
     color: white;
     cursor: pointer;
 }
-button:hover {
-    background: #00c6ff;
-}
+button:hover { background: #00c6ff; }
 .result-box {
     margin-top: 15px;
     padding: 12px;
@@ -110,14 +103,17 @@ function calculateSummary() {
     let r = (rateType === "yearly") ? (rate / 12) / 100 : rate / 100;
 
     let principalPerMonth = roundToTens(P / time);
-    let fixedInterest = roundToTens(P * r);
-    let totalPerMonth = roundToTens(principalPerMonth + fixedInterest);
 
-    let totalPayment = totalPerMonth * time;
-    let totalInterest = fixedInterest * time;
+    // ✅ Correct Flat Interest
+    let totalInterest = P * r * time;
+    let monthlyInterest = roundToTens(totalInterest / time);
+
+    let monthlyTotal = roundToTens(principalPerMonth + monthlyInterest);
+
+    let totalPayment = monthlyTotal * time;
 
     document.getElementById("result").innerHTML = `
-        <b>Monthly Payment:</b> ₹ ${totalPerMonth}<br>
+        <b>Monthly Payment:</b> ₹ ${monthlyTotal}<br>
         <b>Total Payment:</b> ₹ ${roundToTens(totalPayment)}<br>
         <b>Total Interest:</b> ₹ ${roundToTens(totalInterest)}
     `;
@@ -137,11 +133,13 @@ function downloadExcel() {
     let r = (rateType === "yearly") ? (rate / 12) / 100 : rate / 100;
 
     let principalPerMonth = roundToTens(P / time);
-    let fixedInterest = roundToTens(P * r);
-    let total = roundToTens(principalPerMonth + fixedInterest);
+
+    // ✅ Correct Flat Interest
+    let totalInterest = P * r * time;
+    let monthlyInterest = roundToTens(totalInterest / time);
+    let total = roundToTens(principalPerMonth + monthlyInterest);
 
     let balance = P;
-
     let data = [];
 
     // Header
@@ -166,17 +164,17 @@ function downloadExcel() {
         "Authority Sign."
     ]);
 
-    // Opening balance
+    // Opening row
     data.push(["", "", "", roundToTens(P), "", "", ""]);
 
-    // Rows
     for (let i = 1; i <= time; i++) {
+
         balance = roundToTens(balance - principalPerMonth);
 
         data.push([
             i,
             principalPerMonth,
-            fixedInterest,
+            monthlyInterest,
             balance < 0 ? 0 : balance,
             total,
             "",
