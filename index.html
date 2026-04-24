@@ -6,8 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Loan Calculator</title>
 
-<!-- Excel Library -->
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
@@ -20,7 +18,6 @@ body {
     height: 100vh;
     margin: 0;
 }
-
 .container {
     background: white;
     padding: 25px;
@@ -28,26 +25,20 @@ body {
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     width: 350px;
 }
-
 h2 {
     text-align: center;
     margin-bottom: 20px;
-    color: #333;
 }
-
 label {
     font-size: 14px;
-    color: #555;
 }
-
 input, select {
     width: 100%;
     padding: 10px;
     margin: 8px 0 15px;
-    border: 1px solid #ccc;
     border-radius: 6px;
+    border: 1px solid #ccc;
 }
-
 button {
     width: 100%;
     padding: 12px;
@@ -56,20 +47,16 @@ button {
     border: none;
     border-radius: 8px;
     color: white;
-    font-size: 16px;
     cursor: pointer;
 }
-
 button:hover {
     background: #00c6ff;
 }
-
 .result-box {
-    margin-top: 20px;
-    padding: 15px;
+    margin-top: 15px;
+    padding: 12px;
     background: #f1f9ff;
     border-left: 4px solid #4facfe;
-    border-radius: 6px;
 }
 </style>
 
@@ -96,7 +83,7 @@ button:hover {
 <label>Time (Months)</label>
 <input type="number" id="time">
 
-<button onclick="calculateEMI()">Calculate EMI</button>
+<button onclick="calculateSummary()">Calculate</button>
 <button onclick="downloadExcel()">Download Excel</button>
 
 <div id="result" class="result-box"></div>
@@ -109,7 +96,7 @@ function roundToTens(num) {
     return Math.round(num / 10) * 10;
 }
 
-function calculateEMI() {
+function calculateSummary() {
     let P = parseFloat(document.getElementById("amount").value);
     let rate = parseFloat(document.getElementById("rate").value);
     let time = parseInt(document.getElementById("time").value);
@@ -122,16 +109,15 @@ function calculateEMI() {
 
     let r = (rateType === "yearly") ? (rate / 12) / 100 : rate / 100;
 
-    let EMI = (r === 0) ? P / time :
-        (P * r * Math.pow(1 + r, time)) / (Math.pow(1 + r, time) - 1);
+    let principalPerMonth = roundToTens(P / time);
+    let fixedInterest = roundToTens(P * r);
+    let totalPerMonth = roundToTens(principalPerMonth + fixedInterest);
 
-    EMI = roundToTens(EMI);
-
-    let totalPayment = EMI * time;
-    let totalInterest = totalPayment - P;
+    let totalPayment = totalPerMonth * time;
+    let totalInterest = fixedInterest * time;
 
     document.getElementById("result").innerHTML = `
-        <b>EMI:</b> ₹ ${EMI}<br>
+        <b>Monthly Payment:</b> ₹ ${totalPerMonth}<br>
         <b>Total Payment:</b> ₹ ${roundToTens(totalPayment)}<br>
         <b>Total Interest:</b> ₹ ${roundToTens(totalInterest)}
     `;
@@ -144,30 +130,33 @@ function downloadExcel() {
     let rateType = document.getElementById("rateType").value;
 
     if (!P || !rate || !time) {
-        alert("Please fill all fields!");
+        alert("Fill all fields!");
         return;
     }
 
     let r = (rateType === "yearly") ? (rate / 12) / 100 : rate / 100;
 
     let principalPerMonth = roundToTens(P / time);
+    let fixedInterest = roundToTens(P * r);
+    let total = roundToTens(principalPerMonth + fixedInterest);
+
     let balance = P;
 
-    let sheetData = [];
+    let data = [];
 
     // Header
-    sheetData.push(["SHREE SELF HELP GROUP"]);
-    sheetData.push(["Loan Installment Details"]);
-    sheetData.push([]);
+    data.push(["SHREE SELF HELP GROUP"]);
+    data.push(["Loan Installment Details"]);
+    data.push([]);
 
-    sheetData.push(["Account No.:"]);
-    sheetData.push(["Member's Name :"]);
-    sheetData.push(["Loan Amount (Mode):", roundToTens(P)]);
-    sheetData.push(["Date :"]);
-    sheetData.push([]);
+    data.push(["Account No.:"]);
+    data.push(["Member's Name :"]);
+    data.push(["Loan Amount (Mode):", roundToTens(P)]);
+    data.push(["Date :"]);
+    data.push([]);
 
-    // Table Header
-    sheetData.push([
+    // Table header
+    data.push([
         "Months",
         "Installments",
         "Interest",
@@ -178,19 +167,16 @@ function downloadExcel() {
     ]);
 
     // Opening balance
-    sheetData.push(["", "", "", roundToTens(P), "", "", ""]);
+    data.push(["", "", "", roundToTens(P), "", "", ""]);
 
     // Rows
     for (let i = 1; i <= time; i++) {
-        let interest = roundToTens(balance * r);
-        let total = roundToTens(principalPerMonth + interest);
-
         balance = roundToTens(balance - principalPerMonth);
 
-        sheetData.push([
+        data.push([
             i,
             principalPerMonth,
-            interest,
+            fixedInterest,
             balance < 0 ? 0 : balance,
             total,
             "",
@@ -199,8 +185,8 @@ function downloadExcel() {
     }
 
     // Footer
-    sheetData.push([]);
-    sheetData.push([
+    data.push([]);
+    data.push([
         "SHREE SELF HELP GROUP",
         "",
         "",
@@ -209,7 +195,7 @@ function downloadExcel() {
         "Loan Applicant Signature"
     ]);
 
-    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    const ws = XLSX.utils.aoa_to_sheet(data);
 
     ws["!cols"] = [
         { wch: 8 },
